@@ -19,7 +19,6 @@
     <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-reverb">
-    <property name="lower">1</property>
     <property name="upper">100</property>
     <property name="value">18</property>
     <property name="step-increment">1</property>
@@ -27,6 +26,7 @@
     <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-tremolo-depth">
+    <property name="lower">0.01</property>
     <property name="upper">100</property>
     <property name="value">40</property>
     <property name="step-increment">1</property>
@@ -41,6 +41,7 @@
     <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-volume">
+    <property name="lower">1</property>
     <property name="upper">100</property>
     <property name="value">100</property>
     <property name="step-increment">10</property>

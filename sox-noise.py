@@ -5,6 +5,7 @@
 import gi
 import sys
 import signal
+import argparse
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib
 from subprocess import Popen
@@ -16,7 +17,6 @@ class SoxNoise:
         builder.add_from_file("sox-noise.ui")
         builder.connect_signals(self)
         self.window = builder.get_object("main-window")
-        self.window.show_all()
 
         self.subp = None
         self.duration = '01:00'
@@ -28,35 +28,37 @@ class SoxNoise:
         self.reverb = builder.get_object('adj-reverb')
         self.volume = builder.get_object('adj-volume')
 
-        # set defaults
-        builder.get_object('btn-noise-brown').emit('toggled')
-        self.band_center.set_value(500)
-        self.band_width.set_value(500)
-        self.trem_speed.set_value(33.333) # millihertz
-        self.trem_depth.set_value(43)
-        self.reverb.set_value(19)
-        self.volume.set_value(80)
-        auto_play = False
-
         # parse args
-        for arg in args[1:]:
-            try:
-                a = arg.lstrip('-').split('=')
-                if a[0] == 'play':
-                    auto_play = True
-                elif a[0] == 'advanced':
-                    builder.get_object('advanced-expander').set_expanded(True)
-                elif a[0] == 'noise':
-                    builder.get_object(f'btn-noise-{a[1].lower()}').emit('clicked')
-                else:
-                    builder.get_object(f'adj-{a[0].lower()}').set_value(float(a[1]))
-            except Exception as e:
-                print('ARG ERROR:', arg, '::', e)
+        parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', prog=__file__)
+        parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
+            nargs='?', default='brown', help='The "color" of noise')
+        parser.add_argument('--play',          action='store_true',     help='Start playing on open')
+        parser.add_argument('--volume',        type=float, default=80,  help='[1-100]')
+        parser.add_argument('--band-center',   type=float, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
+        parser.add_argument('--band-width',    type=float, default=500, help='Band-pass filter width [1-1000]')
+        parser.add_argument('--advanced',      action='store_true',     help='Show advanced options')
+        parser.add_argument('--tremolo-speed', type=float, default=33,  help='Periodically raise and lower the volume [1-100] (mHz) ')
+        parser.add_argument('--tremolo-depth', type=float, default=43,  help='Tremolo intensity[1-100]')
+        parser.add_argument('--reverb',        type=float, default=19,  help='Small amounts make it sound more natural [1-100]')
+        parser.add_argument('--hide',          action='store_true',     help="Don't show the window")
+        pargs = parser.parse_args(args[1:])
 
+        builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
+        self.band_center.set_value(pargs.band_center)
+        self.band_width.set_value(pargs.band_width)
+        self.trem_speed.set_value(pargs.tremolo_speed) # millihertz
+        self.trem_depth.set_value(pargs.tremolo_depth)
+        self.reverb.set_value(pargs.reverb)
+        self.volume.set_value(pargs.volume)
+        self.noise = pargs.noise
         self.needs_update = False
-        if auto_play:
+
+        if pargs.advanced:
+            builder.get_object('advanced-expander').set_expanded(True)
+        if not pargs.hide:
+            self.window.show_all()
+        if pargs.hide or pargs.play:
             self.play_button.set_active(True)
-            self.play()
 
     def onDestroy(self, *args):
         if self.subp:
