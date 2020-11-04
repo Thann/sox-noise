@@ -2,6 +2,7 @@
 # Noise generator GUI powered by SoX
 # fair-used off of: https://gist.github.com/rsvp/1209835
 
+import os
 import gi
 import sys
 import signal
@@ -14,7 +15,7 @@ from subprocess import Popen
 class SoxNoise:
     def __init__(self, args=[]):
         builder = Gtk.Builder()
-        builder.add_from_file("sox-noise.ui")
+        builder.add_from_file(os.path.join(os.path.dirname(__file__), "main.ui"))
         builder.connect_signals(self)
         self.window = builder.get_object("main-window")
 
@@ -37,9 +38,9 @@ class SoxNoise:
         parser.add_argument('--band-center',   type=float, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
         parser.add_argument('--band-width',    type=float, default=500, help='Band-pass filter width [1-1000]')
         parser.add_argument('--advanced',      action='store_true',     help='Show advanced options')
-        parser.add_argument('--tremolo-speed', type=float, default=33,  help='Periodically raise and lower the volume [1-100] (mHz) ')
-        parser.add_argument('--tremolo-depth', type=float, default=43,  help='Tremolo intensity[1-100]')
-        parser.add_argument('--reverb',        type=float, default=19,  help='Small amounts make it sound more natural [1-100]')
+        parser.add_argument('--tremolo-speed', type=float, default=33,  help='Periodically raise and lower the volume [0-100] (mHz) ')
+        parser.add_argument('--tremolo-depth', type=float, default=43,  help='Tremolo intensity[0-100]')
+        parser.add_argument('--reverb',        type=float, default=19,  help='Small amounts make it sound more natural [0-100]')
         parser.add_argument('--hide',          action='store_true',     help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
@@ -84,7 +85,7 @@ class SoxNoise:
         if self.subp:
             self.subp.kill()
         if self.play_button.get_active():
-            args = ['play', '-c2', '--null', '-talsa', 'synth', self.duration,
+            args = ['sox', '-c2', '--null', '-talsa', 'synth', self.duration,
                 f'{self.noise}noise',
                 'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value()),
                 'tremolo', str(self.trem_speed.get_value()/1000), str(self.trem_depth.get_value()),
@@ -94,11 +95,14 @@ class SoxNoise:
                 # fade: prevents pops/clicks at the end of an iteration
                 'fade', 'q', '.01', self.duration, '.01',
                 'repeat', '99999']
-            print('\n', args)
+            print('\n ===>', ' '.join(args))
             self.subp = Popen(args)
 
 
-if __name__ == "__main__":
+def start():
     win = SoxNoise(sys.argv)
     GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, win.onDestroy)
     Gtk.main()
+
+if __name__ == "__main__":
+    start()
