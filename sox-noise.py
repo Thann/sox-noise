@@ -20,6 +20,7 @@ class SoxNoise:
 
         # set defaults
         self.subp = None
+        self.duration = '01:00'
         builder.get_object('btn-noise-brown').emit('clicked')
         builder.get_object('adj-band-center').set_value(500) # 1786
         builder.get_object('adj-band-width').set_value(500)  # 499
@@ -71,19 +72,19 @@ class SoxNoise:
         self.reverb = adj.get_value ()
 
     def setVolume(self, adj):
-        value = adj.get_value()
-        self.volume = int((100-value)/3)
+        self.volume = adj.get_value()/100
 
     def playButtonClicked(self, button=None):
         if self.subp:
             self.subp.kill()
-        args = ['play', '-c2', '--null', '-talsa', 'synth', '01:00',
+        args = ['play', '-c2', '--null', '-talsa', 'synth', self.duration,
             f'{self.noise}noise',
             'band', '-n', str(self.band_center), str(self.band_width),
             'tremolo', str(self.trem_speed), str(self.trem_depth),
             'reverb', str(self.reverb),
-            'vol', f'-{self.volume}dB',
+            'vol', str(self.volume),
             # 'bass', '-11', 'treble' '-1',
+            'fade', 'q', '.01', self.duration, '.01',
             'repeat', '99999']
         print('\n', args)
         self.subp = Popen(args)
