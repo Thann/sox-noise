@@ -6,47 +6,56 @@
     <property name="lower">1</property>
     <property name="upper">2000</property>
     <property name="value">1786</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-    <signal name="value-changed" handler="setBandCenter" swapped="no"/>
+    <property name="step-increment">10</property>
+    <property name="page-increment">100</property>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-band-width">
+    <property name="lower">1</property>
     <property name="upper">1000</property>
     <property name="value">499</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-    <signal name="value-changed" handler="setBandWidth" swapped="no"/>
+    <property name="step-increment">10</property>
+    <property name="page-increment">100</property>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-reverb">
+    <property name="lower">1</property>
     <property name="upper">100</property>
-    <property name="value">1</property>
+    <property name="value">18</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
-    <signal name="value-changed" handler="setReverb" swapped="no"/>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-tremolo-depth">
     <property name="upper">100</property>
+    <property name="value">40</property>
     <property name="step-increment">1</property>
     <property name="page-increment">10</property>
-    <signal name="value-changed" handler="setTremoloDepth" swapped="no"/>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-tremolo-speed">
-    <property name="upper">1</property>
-    <property name="value">1</property>
-    <property name="step-increment">0.01</property>
-    <property name="page-increment">0.1</property>
-    <signal name="value-changed" handler="setTremoloSpeed" swapped="no"/>
+    <property name="upper">100</property>
+    <property name="value">30</property>
+    <property name="step-increment">1</property>
+    <property name="page-increment">10</property>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
   </object>
   <object class="GtkAdjustment" id="adj-volume">
     <property name="upper">100</property>
     <property name="value">100</property>
-    <property name="step-increment">1</property>
-    <property name="page-increment">10</property>
-    <signal name="value-changed" handler="setVolume" swapped="no"/>
+    <property name="step-increment">10</property>
+    <property name="page-increment">20</property>
+    <signal name="value-changed" handler="valueChanged" swapped="no"/>
+  </object>
+  <object class="GtkImage" id="play-img">
+    <property name="visible">True</property>
+    <property name="can-focus">False</property>
+    <property name="icon-name">media-playback-start</property>
   </object>
   <object class="GtkWindow" id="main-window">
     <property name="can-focus">False</property>
     <property name="title" translatable="yes">SoX Noise</property>
+    <property name="resizable">False</property>
     <property name="icon-name">audio-volume-high</property>
     <property name="gravity">center</property>
     <property name="startup-id">sox-noise</property>
@@ -60,7 +69,7 @@
         <property name="margin-top">5</property>
         <property name="margin-bottom">14</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
+        <property name="spacing">3</property>
         <child>
           <object class="GtkFrame">
             <property name="visible">True</property>
@@ -80,12 +89,13 @@
                       <object class="GtkRadioButton" id="btn-noise-brown">
                         <property name="label" translatable="yes">Brown</property>
                         <property name="visible">True</property>
-                        <property name="can-focus">False</property>
+                        <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">False</property>
+                        <property name="tooltip-text" translatable="yes">Noise produced by Brownian motion.</property>
                         <property name="active">True</property>
                         <property name="draw-indicator">True</property>
-                        <signal name="clicked" handler="setNoise" swapped="no"/>
+                        <signal name="toggled" handler="setNoise" swapped="no"/>
                       </object>
                       <packing>
                         <property name="expand">True</property>
@@ -97,7 +107,7 @@
                       <object class="GtkRadioButton" id="btn-noise-pink">
                         <property name="label" translatable="yes">Pink</property>
                         <property name="visible">True</property>
-                        <property name="can-focus">False</property>
+                        <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">False</property>
                         <property name="active">True</property>
@@ -115,7 +125,7 @@
                       <object class="GtkRadioButton" id="btn-noise-white">
                         <property name="label" translatable="yes">White</property>
                         <property name="visible">True</property>
-                        <property name="can-focus">False</property>
+                        <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">False</property>
                         <property name="active">True</property>
@@ -133,9 +143,10 @@
                       <object class="GtkRadioButton" id="btn-noise-tpdf">
                         <property name="label" translatable="yes">TPDF</property>
                         <property name="visible">True</property>
-                        <property name="can-focus">False</property>
+                        <property name="can-focus">True</property>
                         <property name="focus-on-click">False</property>
                         <property name="receives-default">False</property>
+                        <property name="tooltip-text" translatable="yes">Triangular Probability Density Function</property>
                         <property name="active">True</property>
                         <property name="draw-indicator">True</property>
                         <property name="group">btn-noise-brown</property>
@@ -169,6 +180,7 @@
           <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <property name="tooltip-text" translatable="yes">Band-pass  filter.  The frequency response drops logarithmically around the center frequency.</property>
             <property name="label-xalign">0</property>
             <child>
               <object class="GtkAlignment">
@@ -183,6 +195,8 @@
                     <property name="round-digits">1</property>
                     <property name="digits">0</property>
                     <property name="value-pos">left</property>
+                    <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                    <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -205,6 +219,7 @@
           <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
+            <property name="tooltip-text" translatable="yes">The width of the band-pass filter. </property>
             <property name="label-xalign">0</property>
             <child>
               <object class="GtkAlignment">
@@ -219,6 +234,8 @@
                     <property name="round-digits">1</property>
                     <property name="digits">0</property>
                     <property name="value-pos">left</property>
+                    <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                    <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -239,118 +256,9 @@
         </child>
         <child>
           <object class="GtkFrame">
-            <property name="can-focus">False</property>
-            <property name="no-show-all">True</property>
-            <property name="label-xalign">0</property>
-            <child>
-              <object class="GtkAlignment">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="left-padding">12</property>
-                <child>
-                  <object class="GtkScale">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="adjustment">adj-tremolo-speed</property>
-                    <property name="round-digits">0</property>
-                    <property name="digits">0</property>
-                    <property name="value-pos">left</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="label">
-              <object class="GtkLabel">
-                <property name="can-focus">False</property>
-                <property name="no-show-all">True</property>
-                <property name="label" translatable="yes">Tremolo Speed</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">3</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkFrame">
-            <property name="can-focus">False</property>
-            <property name="no-show-all">True</property>
-            <property name="label-xalign">0</property>
-            <child>
-              <object class="GtkAlignment">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="left-padding">12</property>
-                <child>
-                  <object class="GtkScale">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="adjustment">adj-tremolo-depth</property>
-                    <property name="round-digits">0</property>
-                    <property name="digits">0</property>
-                    <property name="value-pos">left</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="label">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Tremolo Depth</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">4</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkFrame">
-            <property name="can-focus">False</property>
-            <property name="no-show-all">True</property>
-            <property name="label-xalign">0</property>
-            <child>
-              <object class="GtkAlignment">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="left-padding">12</property>
-                <child>
-                  <object class="GtkScale">
-                    <property name="visible">True</property>
-                    <property name="can-focus">True</property>
-                    <property name="adjustment">adj-reverb</property>
-                    <property name="round-digits">1</property>
-                    <property name="digits">0</property>
-                    <property name="value-pos">left</property>
-                  </object>
-                </child>
-              </object>
-            </child>
-            <child type="label">
-              <object class="GtkLabel">
-                <property name="visible">True</property>
-                <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Reverb</property>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">5</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkFrame">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
             <property name="label-xalign">0</property>
-            <property name="shadow-type">none</property>
             <child>
               <object class="GtkAlignment">
                 <property name="visible">True</property>
@@ -364,6 +272,8 @@
                     <property name="round-digits">1</property>
                     <property name="digits">0</property>
                     <property name="value-pos">left</property>
+                    <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                    <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -379,7 +289,147 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">6</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkExpander" id="advanced-expander">
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="orientation">vertical</property>
+                <property name="spacing">3</property>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="tooltip-text" translatable="yes">Periodically raise and lower the volume.  Set the rate in mHz.</property>
+                    <property name="label-xalign">0</property>
+                    <child>
+                      <object class="GtkAlignment">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkScale">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="adjustment">adj-tremolo-speed</property>
+                            <property name="round-digits">0</property>
+                            <property name="digits">0</property>
+                            <property name="value-pos">left</property>
+                            <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                            <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel">
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Tremolo Speed</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="can-focus">False</property>
+                    <property name="tooltip-text" translatable="yes">Increasing the depth gives wider range between soft and loud volumes.</property>
+                    <property name="label-xalign">0</property>
+                    <child>
+                      <object class="GtkAlignment">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkScale">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="adjustment">adj-tremolo-depth</property>
+                            <property name="round-digits">0</property>
+                            <property name="digits">0</property>
+                            <property name="value-pos">left</property>
+                            <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                            <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Tremolo Depth</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">1</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="can-focus">False</property>
+                    <property name="tooltip-text" translatable="yes">Add reverberation to the audio using the 'freeverb' algorithm.  Applying a small amount of stereo reverb to a (dry) mono signal will usually make it sound more natural.</property>
+                    <property name="label-xalign">0</property>
+                    <child>
+                      <object class="GtkAlignment">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkScale">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="adjustment">adj-reverb</property>
+                            <property name="round-digits">1</property>
+                            <property name="digits">0</property>
+                            <property name="value-pos">left</property>
+                            <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                            <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Reverb</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">2</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="label" translatable="yes">Advanced</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">4</property>
           </packing>
         </child>
         <child>
@@ -389,24 +439,27 @@
             <property name="margin-top">9</property>
             <property name="layout-style">spread</property>
             <child>
-              <object class="GtkButton" id="play-button">
+              <object class="GtkToggleButton" id="play-button">
                 <property name="label" translatable="yes">Play</property>
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
+                <property name="can-default">True</property>
+                <property name="has-default">True</property>
                 <property name="receives-default">True</property>
-                <signal name="clicked" handler="playButtonClicked" swapped="no"/>
+                <property name="image">play-img</property>
+                <signal name="toggled" handler="play" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="position">0</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">7</property>
+            <property name="position">5</property>
           </packing>
         </child>
       </object>

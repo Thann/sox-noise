@@ -1,6 +1,6 @@
 # SoX Noise
 
-Noise generator GUI
+Noise generator GUI powered by [Sound eXchange](http://sox.sourceforge.net/)
 
 `./sox-noise.py`
 
