@@ -198,6 +198,7 @@
                     <property name="value-pos">left</property>
                     <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
                     <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                    <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -237,6 +238,7 @@
                     <property name="value-pos">left</property>
                     <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
                     <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                    <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -275,6 +277,7 @@
                     <property name="value-pos">left</property>
                     <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
                     <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                    <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                   </object>
                 </child>
               </object>
@@ -294,7 +297,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkExpander" id="advanced-expander">
+          <object class="GtkExpander" id="effects-expander">
             <property name="visible">True</property>
             <property name="can-focus">True</property>
             <child>
@@ -303,6 +306,45 @@
                 <property name="can-focus">False</property>
                 <property name="orientation">vertical</property>
                 <property name="spacing">3</property>
+                <child>
+                  <object class="GtkFrame">
+                    <property name="can-focus">False</property>
+                    <property name="tooltip-text" translatable="yes">Add reverberation to the audio using the 'freeverb' algorithm.  Applying a small amount of stereo reverb to a (dry) mono signal will usually make it sound more natural.</property>
+                    <property name="label-xalign">0</property>
+                    <child>
+                      <object class="GtkAlignment">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkScale">
+                            <property name="visible">True</property>
+                            <property name="can-focus">True</property>
+                            <property name="adjustment">adj-reverb</property>
+                            <property name="round-digits">1</property>
+                            <property name="digits">0</property>
+                            <property name="value-pos">left</property>
+                            <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                            <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                            <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="label" translatable="yes">Reverb</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">True</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
                 <child>
                   <object class="GtkFrame">
                     <property name="visible">True</property>
@@ -324,6 +366,7 @@
                             <property name="value-pos">left</property>
                             <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
                             <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                            <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -338,7 +381,7 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">0</property>
+                    <property name="position">1</property>
                   </packing>
                 </child>
                 <child>
@@ -361,6 +404,7 @@
                             <property name="value-pos">left</property>
                             <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
                             <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
+                            <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                           </object>
                         </child>
                       </object>
@@ -376,44 +420,6 @@
                   <packing>
                     <property name="expand">False</property>
                     <property name="fill">True</property>
-                    <property name="position">1</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkFrame">
-                    <property name="can-focus">False</property>
-                    <property name="tooltip-text" translatable="yes">Add reverberation to the audio using the 'freeverb' algorithm.  Applying a small amount of stereo reverb to a (dry) mono signal will usually make it sound more natural.</property>
-                    <property name="label-xalign">0</property>
-                    <child>
-                      <object class="GtkAlignment">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="left-padding">12</property>
-                        <child>
-                          <object class="GtkScale">
-                            <property name="visible">True</property>
-                            <property name="can-focus">True</property>
-                            <property name="adjustment">adj-reverb</property>
-                            <property name="round-digits">1</property>
-                            <property name="digits">0</property>
-                            <property name="value-pos">left</property>
-                            <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
-                            <signal name="move-slider" handler="doneAdjusting" swapped="no"/>
-                          </object>
-                        </child>
-                      </object>
-                    </child>
-                    <child type="label">
-                      <object class="GtkLabel">
-                        <property name="visible">True</property>
-                        <property name="can-focus">False</property>
-                        <property name="label" translatable="yes">Reverb</property>
-                      </object>
-                    </child>
-                  </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">True</property>
                     <property name="position">2</property>
                   </packing>
                 </child>
@@ -423,7 +429,7 @@
               <object class="GtkLabel">
                 <property name="visible">True</property>
                 <property name="can-focus">False</property>
-                <property name="label" translatable="yes">Advanced</property>
+                <property name="label" translatable="yes">Effects</property>
               </object>
             </child>
           </object>

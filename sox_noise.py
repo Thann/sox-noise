@@ -37,10 +37,10 @@ class SoxNoise:
         parser.add_argument('--volume',        type=float, default=80,  help='[1-100]')
         parser.add_argument('--band-center',   type=float, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
         parser.add_argument('--band-width',    type=float, default=500, help='Band-pass filter width [1-1000]')
-        parser.add_argument('--advanced',      action='store_true',     help='Show advanced options')
-        parser.add_argument('--tremolo-speed', type=float, default=33,  help='Periodically raise and lower the volume [0-100] (mHz) ')
-        parser.add_argument('--tremolo-depth', type=float, default=43,  help='Tremolo intensity[0-100]')
-        parser.add_argument('--reverb',        type=float, default=19,  help='Small amounts make it sound more natural [0-100]')
+        parser.add_argument('--effects',       action='store_true',     help='Show effects options')
+        parser.add_argument('--tremolo-speed', type=float, default=30,  help='Periodically raise and lower the volume [0-100] (mHz) ')
+        parser.add_argument('--tremolo-depth', type=float, default=40,  help='Tremolo intensity[0-100]')
+        parser.add_argument('--reverb',        type=float, default=20,  help='Small amounts make it sound more natural [0-100]')
         parser.add_argument('--hide',          action='store_true',     help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
@@ -54,8 +54,8 @@ class SoxNoise:
         self.noise = pargs.noise
         self.needs_update = False
 
-        if pargs.advanced:
-            builder.get_object('advanced-expander').set_expanded(True)
+        if pargs.effects:
+            builder.get_object('effects-expander').set_expanded(True)
         if not pargs.hide:
             self.window.show_all()
         if pargs.hide or pargs.play:
