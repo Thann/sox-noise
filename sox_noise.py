@@ -8,7 +8,7 @@ import sys
 import signal
 import argparse
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib
+from gi.repository import Gtk, GLib, Gdk
 from subprocess import Popen
 
 
@@ -41,6 +41,7 @@ class SoxNoise:
         parser.add_argument('--tremolo-speed', type=float, default=30,  help='Periodically raise and lower the volume [0-100] (mHz) ')
         parser.add_argument('--tremolo-depth', type=float, default=40,  help='Tremolo intensity[0-100]')
         parser.add_argument('--reverb',        type=float, default=20,  help='Small amounts make it sound more natural [0-100]')
+        parser.add_argument('--tray',          action='store_true',     help='Show an icon in the system tray')
         parser.add_argument('--hide',          action='store_true',     help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
@@ -60,6 +61,18 @@ class SoxNoise:
             self.window.show_all()
         if pargs.hide or pargs.play:
             self.play_button.set_active(True)
+        if pargs.tray:
+            try:
+                gi.require_version('AppIndicator3', '0.1')
+                from gi.repository import AppIndicator3
+                self.ind = AppIndicator3.Indicator.new(
+                    'sox-noise', 'audio-volume-high', AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
+                self.ind.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
+                menu = Gtk.Menu()  # Hack: indicator needs menu, but we dont want one
+                menu.connect('draw', lambda a,b: (menu.hide(), self.window.present()))
+                self.ind.set_menu(menu)
+            except Exception as e:
+                print('TRAY ERROR:', e)
 
     def onDestroy(self, *args):
         if self.subp:
@@ -94,7 +107,7 @@ class SoxNoise:
                 # 'bass', '-11', 'treble' '-1',
                 # fade: prevents pops/clicks at the end of an iteration
                 'fade', 'q', '.01', self.duration, '.01',
-                'repeat', '99999']
+                'repeat', '99999']  # ~ 69 days
             print('\n ===>', ' '.join(args))
             self.subp = Popen(args)
 
