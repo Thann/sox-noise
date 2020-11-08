@@ -308,6 +308,7 @@
                 <property name="spacing">3</property>
                 <child>
                   <object class="GtkFrame">
+                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="tooltip-text" translatable="yes">Add reverberation to the audio using the 'freeverb' algorithm.  Applying a small amount of stereo reverb to a (dry) mono signal will usually make it sound more natural.</property>
                     <property name="label-xalign">0</property>
@@ -373,6 +374,7 @@
                     </child>
                     <child type="label">
                       <object class="GtkLabel">
+                        <property name="visible">True</property>
                         <property name="can-focus">False</property>
                         <property name="label" translatable="yes">Tremolo Speed</property>
                       </object>
@@ -386,6 +388,7 @@
                 </child>
                 <child>
                   <object class="GtkFrame">
+                    <property name="visible">True</property>
                     <property name="can-focus">False</property>
                     <property name="tooltip-text" translatable="yes">Increasing the depth gives wider range between soft and loud volumes.</property>
                     <property name="label-xalign">0</property>
