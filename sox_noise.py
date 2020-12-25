@@ -20,7 +20,6 @@ class SoxNoise:
         self.window = builder.get_object("main-window")
 
         self.subp = None
-        self.duration = '01:00'
         self.play_button = builder.get_object('play-button')
         self.band_center = builder.get_object('adj-band-center')
         self.band_width = builder.get_object('adj-band-width')
@@ -33,16 +32,17 @@ class SoxNoise:
         parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', prog=__file__)
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
             nargs='?', default='brown', help='The "color" of noise')
-        parser.add_argument('--play',          action='store_true',     help='Start playing on open')
-        parser.add_argument('--volume',        type=float, default=80,  help='[1-100]')
-        parser.add_argument('--band-center',   type=float, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
-        parser.add_argument('--band-width',    type=float, default=500, help='Band-pass filter width [1-1000]')
-        parser.add_argument('--effects',       action='store_true',     help='Show effects options')
-        parser.add_argument('--tremolo-speed', type=float, default=30,  help='Periodically raise and lower the volume [0-100] (mHz) ')
-        parser.add_argument('--tremolo-depth', type=float, default=40,  help='Tremolo intensity[0-100]')
-        parser.add_argument('--reverb',        type=float, default=20,  help='Small amounts make it sound more natural [0-100]')
-        parser.add_argument('--tray',          action='store_true',     help='Show an icon in the system tray')
-        parser.add_argument('--hide',          action='store_true',     help="Don't show the window")
+        parser.add_argument('--play',          action='store_true',   help='Start playing on open')
+        parser.add_argument('--volume',        type=int, default=80,  help='[1-100]')
+        parser.add_argument('--band-center',   type=int, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
+        parser.add_argument('--band-width',    type=int, default=500, help='Band-pass filter width [1-1000]')
+        parser.add_argument('--effects',       action='store_true',   help='Show effects options')
+        parser.add_argument('--reverb',        type=int, default=20,  help='Small amounts make it sound more natural [0-100]')
+        parser.add_argument('--tremolo-speed', type=int, default=2,   help='Periodically raise and lower the volume [0-10] (cycles per duration)')
+        parser.add_argument('--tremolo-depth', type=int, default=30,  help='Tremolo intensity [0-100]')
+        parser.add_argument('--duration',      type=int, default=60,  help='How many seconds to generate noise before looping')
+        parser.add_argument('--tray',          action='store_true',   help='Show an icon in the system tray')
+        parser.add_argument('--hide',          action='store_true',   help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
         builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
@@ -52,8 +52,16 @@ class SoxNoise:
         self.trem_depth.set_value(pargs.tremolo_depth)
         self.reverb.set_value(pargs.reverb)
         self.volume.set_value(pargs.volume)
+        self.duration = pargs.duration
         self.noise = pargs.noise
         self.needs_update = False
+
+        # Apply styles - Hack to align the tremolo-speed scale
+        css = b'.lpad { margin-left: 1.1ex; }'
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(css)
+        Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(),
+            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
         if pargs.effects:
             builder.get_object('effects-expander').set_expanded(True)
@@ -65,8 +73,8 @@ class SoxNoise:
             try:
                 gi.require_version('AppIndicator3', '0.1')
                 from gi.repository import AppIndicator3
-                self.ind = AppIndicator3.Indicator.new(
-                    'sox-noise', 'audio-volume-high', AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
+                self.ind = AppIndicator3.Indicator.new('sox-noise', 'audio-volume-high',
+                    AppIndicator3.IndicatorCategory.APPLICATION_STATUS)
                 self.ind.set_status(AppIndicator3.IndicatorStatus.ACTIVE)
                 menu = Gtk.Menu()  # Hack: indicator needs menu, but we dont want one
                 menu.connect('draw', lambda a,b: (menu.hide(), self.window.present()))
@@ -97,17 +105,21 @@ class SoxNoise:
     def play(self, button=None):
         if self.subp:
             self.subp.kill()
+
+        # make tspeed a fraction of the duration
+        tspeed = int(self.trem_speed.get_value())/self.duration
+
         if self.play_button.get_active():
-            args = ['sox', '-c2', '--null', '-talsa', 'synth', self.duration,
+            args = ['sox', '-c2', '--null', '-talsa', 'synth', f'0:{self.duration}',
                 f'{self.noise}noise',
                 'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value()),
-                'tremolo', str(self.trem_speed.get_value()/1000), str(self.trem_depth.get_value()),
+                'tremolo', str(tspeed), str(self.trem_depth.get_value()),
                 'reverb', str(self.reverb.get_value()),
                 'vol', str(self.volume.get_value()/100),
                 # 'bass', '-11', 'treble' '-1',
                 # fade: prevents pops/clicks at the end of an iteration
-                'fade', 'q', '.01', self.duration, '.01',
-                'repeat', '99999']  # ~ 69 days
+                'fade', 'q', '.005', f'0:{self.duration}', '.005',
+                'repeat', '-']
             print('\n ===>', ' '.join(args))
             self.subp = Popen(args)
 
