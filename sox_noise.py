@@ -45,7 +45,7 @@ class SoxNoise:
         parser.add_argument('--hide',          action='store_true',   help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
-        builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
+        # set initial values
         self.band_center.set_value(pargs.band_center)
         self.band_width.set_value(pargs.band_width)
         self.trem_speed.set_value(pargs.tremolo_speed) # millihertz
@@ -55,13 +55,7 @@ class SoxNoise:
         self.duration = pargs.duration
         self.noise = pargs.noise
         self.needs_update = False
-
-        # Apply styles - Hack to align the tremolo-speed scale
-        css = b'.lpad { margin-left: 1.1ex; }'
-        css_provider = Gtk.CssProvider()
-        css_provider.load_from_data(css)
-        Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(),
-            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
 
         if pargs.effects:
             builder.get_object('effects-expander').set_expanded(True)
@@ -81,6 +75,14 @@ class SoxNoise:
                 self.ind.set_menu(menu)
             except Exception as e:
                 print('TRAY ERROR:', e)
+
+        # apply styles
+        # Hack: to align the tremolo-speed scale
+        css = b'.lpad { margin-left: 1.1ex; }'
+        css_provider = Gtk.CssProvider()
+        css_provider.load_from_data(css)
+        Gtk.StyleContext().add_provider_for_screen(Gdk.Screen.get_default(),
+            css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
 
     def onDestroy(self, *args):
         if self.subp:
