@@ -61,6 +61,7 @@
     <property name="gravity">center</property>
     <property name="startup-id">sox-noise</property>
     <signal name="destroy" handler="onDestroy" swapped="no"/>
+    <signal name="key-press-event" handler="onKeyPress" swapped="no"/>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>

@@ -89,6 +89,12 @@ class SoxNoise:
             self.subp.kill()
         Gtk.main_quit()
 
+    def onKeyPress(self, widget, event):
+        # Close on Ctrl+Q, etc.
+        if (event.keyval in [Gdk.KEY_q, Gdk.KEY_w, Gdk.KEY_c] and
+            event.state & Gdk.ModifierType.CONTROL_MASK):
+            self.onDestroy()
+
     def setNoise(self, button):
         if (button.get_active()):
             self.noise = button.get_label().lower()
