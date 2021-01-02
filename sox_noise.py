@@ -7,6 +7,7 @@ import gi
 import sys
 import signal
 import argparse
+import configparser
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk
 from subprocess import Popen
@@ -29,7 +30,11 @@ class SoxNoise:
         self.volume = builder.get_object('adj-volume')
 
         # parse args
-        parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.')
+        conf_parser = argparse.ArgumentParser(add_help=False)
+        conf_parser.add_argument('--config', type=str, default='~/.config/sox-noise.conf',
+            help='Configuration file location (default: ~/.config/sox-noise.conf)')
+        cargs, remaining_args = conf_parser.parse_known_args(args[1:])
+        parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', parents=[conf_parser])
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
             nargs='?', default='brown', help='The "color" of noise')
         parser.add_argument('--play',          action='store_true',    help='Start playing on open')
@@ -40,11 +45,19 @@ class SoxNoise:
         parser.add_argument('--reverb',        type=int,  default=20,  help='Small amounts make it sound more natural [0-100]')
         parser.add_argument('--tremolo-speed', type=int,  default=2,   help='Periodically raise and lower the volume [0-10] (cycles per duration)')
         parser.add_argument('--tremolo-depth', type=int,  default=30,  help='Tremolo intensity [0-100]')
-        parser.add_argument('--duration',      type=int,  default=60,  help='How many seconds to generate noise before looping. (default: 60)')
+        parser.add_argument('--duration',      type=int,  default=60,  help='How many seconds to generate noise before looping (default: 60)')
         parser.add_argument('--fade',          type=float,default=.005,help='How long to fade in/out on loop. Prevents clicking/popping (default: 0.005)')
         parser.add_argument('--tray',          action='store_true',    help='Show an icon in the system tray')
         parser.add_argument('--hide',          action='store_true',    help="Don't show the window")
-        pargs = parser.parse_args(args[1:])
+        copts = None
+        cpath = os.path.expanduser(cargs.config)
+        if os.path.exists(cpath):
+            config = configparser.ConfigParser()
+            config.read([cpath])
+            copts = { k.replace('-','_'):v for k,v in config.items(config.sections()[0]) }
+            parser.set_defaults(**copts)
+        pargs = parser.parse_args(remaining_args)
+        if copts:  print("Config:", copts)  # avoid printing on help
 
         # set initial values
         self.band_center.set_value(pargs.band_center)
