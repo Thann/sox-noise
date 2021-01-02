@@ -18,9 +18,10 @@ class SoxNoise:
         builder = Gtk.Builder()
         builder.add_from_file(os.path.join(os.path.dirname(__file__), "main.ui"))
         builder.connect_signals(self)
-        self.window = builder.get_object("main-window")
+        GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.onDestroy)
 
         self.subp = None
+        self.window = builder.get_object("main-window")
         self.play_button = builder.get_object('play-button')
         self.band_center = builder.get_object('adj-band-center')
         self.band_width = builder.get_object('adj-band-width')
@@ -28,11 +29,18 @@ class SoxNoise:
         self.trem_depth = builder.get_object('adj-tremolo-depth')
         self.reverb = builder.get_object('adj-reverb')
         self.volume = builder.get_object('adj-volume')
+        default_conf = '~/.config/sox-noise.conf'
+        output_mapping = {
+            'pulse':   ['-tpulseaudio'],
+            'alsa':    ['-talsa'],
+            'wav':     ['-twav', '-'],
+            'sox':     ['-tsox', '-'],
+            'default': ['-d'],
+        }
 
         # parse args
         conf_parser = argparse.ArgumentParser(add_help=False)
-        conf_parser.add_argument('--config', type=str, default='~/.config/sox-noise.conf',
-            help='Configuration file location (default: ~/.config/sox-noise.conf)')
+        conf_parser.add_argument('--config', help=f'Configuration file location (default: {default_conf})')
         cargs, remaining_args = conf_parser.parse_known_args(args[1:])
         parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', parents=[conf_parser])
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
@@ -49,20 +57,25 @@ class SoxNoise:
         parser.add_argument('--fade',          type=float,default=.005,help='How long to fade in/out on loop. Prevents clicking/popping (default: 0.005)')
         parser.add_argument('--tray',          action='store_true',    help='Show an icon in the system tray')
         parser.add_argument('--hide',          action='store_true',    help="Don't show the window")
-        copts = None
-        cpath = os.path.expanduser(cargs.config)
+        parser.add_argument('--output',        default='default',      help='Output device/format: {'+ ','.join(output_mapping.keys()) +'}, or filename')
+
+        # parse config
+        cpath = os.path.expanduser(cargs.config or default_conf)
         if os.path.exists(cpath):
             config = configparser.ConfigParser()
             config.read([cpath])
             copts = { k.replace('-','_'):v for k,v in config.items(config.sections()[0]) }
-            parser.set_defaults(**copts)
-        pargs = parser.parse_args(remaining_args)
-        if copts:  print("Config:", copts)  # avoid printing on help
+            parser.set_defaults(**copts)  # unfortunatly this borks the ArgumentDefaultsHelpFormatter
+            pargs = parser.parse_args(remaining_args)
+            print("Config:", cpath, copts, file=sys.stderr)  # avoid printing on help
+        else:
+            pargs = parser.parse_args(remaining_args)
+            if cargs.config:  print("No config file found:", cpath, file=sys.stderr)
 
         # set initial values
         self.band_center.set_value(pargs.band_center)
         self.band_width.set_value(pargs.band_width)
-        self.trem_speed.set_value(pargs.tremolo_speed) # millihertz
+        self.trem_speed.set_value(pargs.tremolo_speed)
         self.trem_depth.set_value(pargs.tremolo_depth)
         self.reverb.set_value(pargs.reverb)
         self.volume.set_value(pargs.volume)
@@ -70,7 +83,15 @@ class SoxNoise:
         self.noise = pargs.noise
         self.fade = pargs.fade
         self.needs_update = False
+        self.repeat = True
         builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
+
+        self.output = output_mapping.get(pargs.output)
+        if not self.output:  # output to file
+            self.repeat = False
+            self.output = [pargs.output]
+        if pargs.output not in ['wav', 'sox'] and os.fstat(0) != os.fstat(1):
+            print('WARNING: Redirect Detected: Use the "--output=wav" or "--output=sox" arguments to redirect sound data!', file=sys.stderr)
 
         if pargs.effects:
             builder.get_object('effects-expander').set_expanded(True)
@@ -89,7 +110,7 @@ class SoxNoise:
                 menu.connect('draw', lambda a,b: (menu.hide(), self.window.present()))
                 self.ind.set_menu(menu)
             except Exception as e:
-                print('TRAY ERROR:', e)
+                print('TRAY ERROR:', e, file=sys.stderr)
 
         # apply styles
         # Hack: to align the tremolo-speed scale
@@ -113,7 +134,7 @@ class SoxNoise:
     def setNoise(self, button):
         if (button.get_active()):
             self.noise = button.get_label().lower()
-        self.play()  # resume playback
+            self.play()  # resume playback
 
     def valueChanged(self, adj):
         # slider changed
@@ -129,27 +150,22 @@ class SoxNoise:
         if self.subp:
             self.subp.kill()
 
-        # make tspeed a fraction of the duration
-        tspeed = int(self.trem_speed.get_value())/self.duration
-
         if self.play_button.get_active():
-            args = ['sox', '-c2', '--null', '-talsa', 'synth', f'0:{self.duration}',
-                f'{self.noise}noise',
+            args = ['sox', '-c2', '--null'] + self.output + [
+                'synth', f'0:{self.duration}', f'{self.noise}noise',
                 'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value()),
-                'tremolo', str(tspeed), str(self.trem_depth.get_value()),
+                'tremolo', str(self.trem_speed.get_value()/self.duration), str(self.trem_depth.get_value()),
                 'reverb', str(self.reverb.get_value()),
                 'vol', str(self.volume.get_value()/100),
                 # 'bass', '-11', 'treble' '-1',
-                # fade: prevents pops/clicks at the end of an iteration
-                'fade', 'q', str(self.fade), f'0:{self.duration}', str(self.fade),
-                'repeat', '-']
-            print('\n ===>', ' '.join(args))
+                'fade', 'q', str(self.fade), f'0:{self.duration}', str(self.fade)] + ([
+                'repeat', '-'] if self.repeat else [])
+            print('\n ===>', ' '.join(args), file=sys.stderr)
             self.subp = Popen(args)
 
 
 def start():
-    win = SoxNoise(sys.argv)
-    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, win.onDestroy)
+    SoxNoise(sys.argv)
     Gtk.main()
 
 if __name__ == "__main__":
