@@ -29,20 +29,21 @@ class SoxNoise:
         self.volume = builder.get_object('adj-volume')
 
         # parse args
-        parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', prog=__file__)
+        parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.')
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
             nargs='?', default='brown', help='The "color" of noise')
-        parser.add_argument('--play',          action='store_true',   help='Start playing on open')
-        parser.add_argument('--volume',        type=int, default=80,  help='[1-100]')
-        parser.add_argument('--band-center',   type=int, default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
-        parser.add_argument('--band-width',    type=int, default=500, help='Band-pass filter width [1-1000]')
-        parser.add_argument('--effects',       action='store_true',   help='Show effects options')
-        parser.add_argument('--reverb',        type=int, default=20,  help='Small amounts make it sound more natural [0-100]')
-        parser.add_argument('--tremolo-speed', type=int, default=2,   help='Periodically raise and lower the volume [0-10] (cycles per duration)')
-        parser.add_argument('--tremolo-depth', type=int, default=30,  help='Tremolo intensity [0-100]')
-        parser.add_argument('--duration',      type=int, default=60,  help='How many seconds to generate noise before looping')
-        parser.add_argument('--tray',          action='store_true',   help='Show an icon in the system tray')
-        parser.add_argument('--hide',          action='store_true',   help="Don't show the window")
+        parser.add_argument('--play',          action='store_true',    help='Start playing on open')
+        parser.add_argument('--volume',        type=int,  default=80,  help='[1-100]')
+        parser.add_argument('--band-center',   type=int,  default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
+        parser.add_argument('--band-width',    type=int,  default=500, help='Band-pass filter width [1-1000]')
+        parser.add_argument('--effects',       action='store_true',    help='Show effects options')
+        parser.add_argument('--reverb',        type=int,  default=20,  help='Small amounts make it sound more natural [0-100]')
+        parser.add_argument('--tremolo-speed', type=int,  default=2,   help='Periodically raise and lower the volume [0-10] (cycles per duration)')
+        parser.add_argument('--tremolo-depth', type=int,  default=30,  help='Tremolo intensity [0-100]')
+        parser.add_argument('--duration',      type=int,  default=60,  help='How many seconds to generate noise before looping. (default: 60)')
+        parser.add_argument('--fade',          type=float,default=.005,help='How long to fade in/out on loop. Prevents clicking/popping (default: 0.005)')
+        parser.add_argument('--tray',          action='store_true',    help='Show an icon in the system tray')
+        parser.add_argument('--hide',          action='store_true',    help="Don't show the window")
         pargs = parser.parse_args(args[1:])
 
         # set initial values
@@ -54,6 +55,7 @@ class SoxNoise:
         self.volume.set_value(pargs.volume)
         self.duration = pargs.duration
         self.noise = pargs.noise
+        self.fade = pargs.fade
         self.needs_update = False
         builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
 
@@ -126,7 +128,7 @@ class SoxNoise:
                 'vol', str(self.volume.get_value()/100),
                 # 'bass', '-11', 'treble' '-1',
                 # fade: prevents pops/clicks at the end of an iteration
-                'fade', 'q', '.005', f'0:{self.duration}', '.005',
+                'fade', 'q', str(self.fade), f'0:{self.duration}', str(self.fade),
                 'repeat', '-']
             print('\n ===>', ' '.join(args))
             self.subp = Popen(args)
