@@ -41,7 +41,7 @@ class SoxNoise:
         # parse args
         conf_parser = argparse.ArgumentParser(add_help=False)
         conf_parser.add_argument('--config', help=f'Configuration file location (default: {default_conf})')
-        cargs, remaining_args = conf_parser.parse_known_args(args[1:])
+        cargs, remaining_args = conf_parser.parse_known_args(args)
         parser = argparse.ArgumentParser(description='Noise Generator powered by SoX.', parents=[conf_parser])
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
             nargs='?', default='brown', help='The "color" of noise')
@@ -165,7 +165,7 @@ class SoxNoise:
 
 
 def start():
-    SoxNoise(sys.argv)
+    SoxNoise(sys.argv[1:])
     Gtk.main()
 
 if __name__ == "__main__":
