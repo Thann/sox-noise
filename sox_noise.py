@@ -87,10 +87,14 @@ class SoxNoise:
         self.repeat = True
         builder.get_object(f'btn-noise-{pargs.noise}').emit('clicked')
 
-        self.output = output_mapping.get(pargs.output)
+        out_split = pargs.output.split(',', 1)
+        self.output = output_mapping.get(out_split[0])
         if not self.output:  # output to file
             self.repeat = False
-            self.output = [pargs.output]
+            self.output = [os.path.expanduser(pargs.output)]
+        elif len(out_split) > 1:
+            # allows for "--output=alsa,hw:0,1"
+            self.output = [self.output[0], out_split[1]]
         if pargs.output not in ['wav', 'sox'] and os.fstat(0) != os.fstat(1):
             print('WARNING: Redirect Detected: Use the "--output=wav" or "--output=sox" arguments to redirect sound data!', file=sys.stderr)
 
