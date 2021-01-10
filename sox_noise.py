@@ -73,6 +73,7 @@ class SoxNoise:
             if cargs.config:  print("No config file found:", cpath, file=sys.stderr)
 
         # set initial values
+        self.play_immedietly = False
         self.band_center.set_value(pargs.band_center)
         self.band_width.set_value(pargs.band_width)
         self.trem_speed.set_value(pargs.tremolo_speed)
@@ -138,13 +139,22 @@ class SoxNoise:
 
     def valueChanged(self, adj):
         # slider changed
-        self.needs_update = True
+        if self.play_immedietly:
+            self.play_immedietly = False
+            self.play()
+        else:
+            self.needs_update = True
 
     def doneAdjusting(self, widget=None, event=None):
+        # Hack: "scroll events" trigger doneAdjusting before valueChanged
+        scroll = isinstance(event, Gtk.ScrollType)
         # resume playback with new settings
-        if self.needs_update and self.subp:
-            self.needs_update = False
-            self.play()
+        if self.subp:
+            if scroll:
+                self.play_immedietly = True
+            if self.needs_update:
+                self.needs_update = False
+                self.play()
 
     def play(self, button=None):
         if self.subp:
