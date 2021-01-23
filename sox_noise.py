@@ -46,7 +46,7 @@ class SoxNoise:
         parser.add_argument('noise', choices=['brown', 'pink', 'white', 'tpdf'],
             nargs='?', default='brown', help='The "color" of noise')
         parser.add_argument('--play',          action='store_true',    help='Start playing on open')
-        parser.add_argument('--volume',        type=int,  default=80,  help='[1-100]')
+        parser.add_argument('--volume',        type=int,  default=80,  help='[1-120]')
         parser.add_argument('--band-center',   type=int,  default=500, help='Band-pass filter around center frequency [1-2000] (Hz) ')
         parser.add_argument('--band-width',    type=int,  default=500, help='Band-pass filter width [1-1000]')
         parser.add_argument('--effects',       action='store_true',    help='Show effects options')
@@ -165,12 +165,13 @@ class SoxNoise:
             self.subp.kill()
 
         if self.play_button.get_active():
+            vol = self.volume.get_value()
             args = ['sox', '-c2', '--null'] + self.output + [
                 'synth', f'0:{self.duration}', f'{self.noise}noise',
                 'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value()),
                 'tremolo', str(self.trem_speed.get_value()/self.duration), str(self.trem_depth.get_value()),
-                'reverb', str(self.reverb.get_value()),
-                'vol', str(self.volume.get_value()/100),
+                'reverb', str(self.reverb.get_value())] + ([
+                'vol', str(vol/100)] if vol <= 100 else ['gain', str(vol-100)]) + [
                 # 'bass', '-11', 'treble' '-1',
                 'fade', 'q', str(self.fade), f'0:{self.duration}', str(self.fade)] + ([
                 'repeat', '-'] if self.repeat else [])
