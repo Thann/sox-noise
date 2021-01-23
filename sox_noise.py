@@ -29,7 +29,7 @@ class SoxNoise:
         self.trem_depth = builder.get_object('adj-tremolo-depth')
         self.reverb = builder.get_object('adj-reverb')
         self.volume = builder.get_object('adj-volume')
-        default_conf = '~/.config/sox-noise.conf'
+        default_conf = os.getenv('XDG_CONFIG_HOME', '~/.config') + '/sox-noise.conf'
         output_mapping = {
             'pulse':   ['-tpulseaudio'],
             'alsa':    ['-talsa'],
@@ -58,6 +58,7 @@ class SoxNoise:
         parser.add_argument('--tray',          action='store_true',    help='Show an icon in the system tray')
         parser.add_argument('--hide',          action='store_true',    help="Don't show the window")
         parser.add_argument('--output',        default='default',      help='Output device/format: {'+ ','.join(output_mapping.keys()) +'}, or filename')
+        parser.add_argument('--extras',        nargs='+',              help='Extra arguments to pass to sox')
 
         # parse config
         cpath = os.path.expanduser(cargs.config or default_conf)
@@ -65,6 +66,7 @@ class SoxNoise:
             config = configparser.ConfigParser()
             config.read([cpath])
             copts = { k.replace('-','_'):v for k,v in config.items(config.sections()[0]) }
+            if 'extras' in copts:  copts['extras'] = copts['extras'].split(' ')
             parser.set_defaults(**copts)  # unfortunatly this borks the ArgumentDefaultsHelpFormatter
             pargs = parser.parse_args(remaining_args)
             print("Config:", cpath, copts, file=sys.stderr)  # avoid printing on help
@@ -81,6 +83,7 @@ class SoxNoise:
         self.reverb.set_value(pargs.reverb)
         self.volume.set_value(pargs.volume)
         self.duration = pargs.duration
+        self.extras = pargs.extras
         self.noise = pargs.noise
         self.fade = pargs.fade
         self.needs_update = False
@@ -172,9 +175,9 @@ class SoxNoise:
                 'tremolo', str(self.trem_speed.get_value()/self.duration), str(self.trem_depth.get_value()),
                 'reverb', str(self.reverb.get_value())] + ([
                 'vol', str(vol/100)] if vol <= 100 else ['gain', str(vol-100)]) + [
-                # 'bass', '-11', 'treble' '-1',
                 'fade', 'q', str(self.fade), f'0:{self.duration}', str(self.fade)] + ([
-                'repeat', '-'] if self.repeat else [])
+                'repeat', '-'] if self.repeat else []) + (
+                self.extras if self.extras else [])
             print('\n ===>', ' '.join(args), file=sys.stderr)
             self.subp = Popen(args)
 
