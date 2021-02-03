@@ -270,10 +270,10 @@ class SoxNoise:
         # TODO: wait for effects expander to be done resizing and update
         # GLib.idle_add(self.genSpec, self)
 
-        # MAGIC: 87 happens to remove padding, etc for me
-        height = self.builder.get_object('main-box').get_allocation().height - 87
+        # MAGIC: 9 happens to remove padding, etc for me (87 w/o -r)
+        height = self.builder.get_object('main-box').get_allocation().height - 9
         args = self.getArgs(['--null'], full=False) + [
-            'spectrogram', '-o', self.temp.name, '-x200', f'-y{height}']
+            'spectrogram', '-o', self.temp.name, '-x200', f'-y{height}', '-r']
         # print('\n spec===>', ' '.join(args), file=sys.stderr)
         spec = GLib.spawn_async(args, flags=GLib.SpawnFlags.DO_NOT_REAP_CHILD)
         GLib.child_watch_add(spec[0], self.specDone)
