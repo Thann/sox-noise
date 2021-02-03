@@ -297,6 +297,7 @@
                     <property name="left-padding">12</property>
                     <child>
                       <object class="GtkScale">
+                        <property name="name">band_center</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="adjustment">adj-band-center</property>
@@ -337,6 +338,7 @@
                     <property name="left-padding">12</property>
                     <child>
                       <object class="GtkScale">
+                        <property name="name">band_width</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="adjustment">adj-band-width</property>
@@ -376,14 +378,15 @@
                     <property name="left-padding">12</property>
                     <child>
                       <object class="GtkScale">
+                        <property name="name">volume</property>
                         <property name="visible">True</property>
                         <property name="can-focus">True</property>
                         <property name="adjustment">adj-volume</property>
                         <property name="round-digits">1</property>
                         <property name="digits">0</property>
                         <property name="value-pos">left</property>
-                        <signal name="button-release-event" handler="doneAdjusting" object="adj-volume" swapped="no"/>
-                        <signal name="move-slider" handler="doneAdjusting" object="adj-volume" after="yes" swapped="no"/>
+                        <signal name="button-release-event" handler="doneAdjusting" swapped="no"/>
+                        <signal name="move-slider" handler="doneAdjusting" after="yes" swapped="no"/>
                         <signal name="scroll-event" handler="doneAdjusting" swapped="no"/>
                       </object>
                     </child>
@@ -426,6 +429,7 @@
                             <property name="left-padding">12</property>
                             <child>
                               <object class="GtkScale">
+                                <property name="name">reverb</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="adjustment">adj-reverb</property>
@@ -466,6 +470,7 @@
                             <property name="left-padding">12</property>
                             <child>
                               <object class="GtkScale">
+                                <property name="name">tremolo_speed</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="adjustment">adj-tremolo-speed</property>
@@ -509,6 +514,7 @@
                             <property name="left-padding">12</property>
                             <child>
                               <object class="GtkScale">
+                                <property name="name">tremolo_depth</property>
                                 <property name="visible">True</property>
                                 <property name="can-focus">True</property>
                                 <property name="adjustment">adj-tremolo-depth</property>

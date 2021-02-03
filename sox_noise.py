@@ -6,11 +6,10 @@ import os
 import gi
 import sys
 import signal
-import tempfile
 import argparse
 import configparser
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk
+from gi.repository import Gtk, GLib, Gdk, GdkPixbuf
 from subprocess import Popen
 output_mapping = {
     'pulse':   ['-tpulseaudio'],
@@ -122,7 +121,7 @@ class SoxNoise:
     def parseConfig(self, cpath):
         config = configparser.ConfigParser()
         config.read([cpath])
-        copts = { k.replace('-','_'): v
+        copts = { k.replace('-', '_'): v
                   for k, v in config.items(config.sections()[0]) }
         if 'extras' in copts:  copts['extras'] = copts['extras'].split(' ')
         return copts
@@ -146,8 +145,6 @@ class SoxNoise:
     def onDestroy(self, *args):
         if self.subp:
             self.subp.kill()
-        if hasattr(self, 'temp'):
-            self.temp.close()
         Gtk.main_quit()
 
     def onKeyPress(self, widget, event):
@@ -172,7 +169,7 @@ class SoxNoise:
         if self.needs_update:
             self.saveSound()
             self.needs_update = False
-            if widget != self.volume:
+            if not widget or widget.get_name().startswith('band_'):
                 self.showSpectrogram()
             if self.subp:  self.play()
 
@@ -262,25 +259,27 @@ class SoxNoise:
 
     def showSpectrogram(self, widget=None, event=None):
         if not self.spec_button.get_active():
-            self.spec_image.hide()
-            return
-        if not hasattr(self, 'temp'):
-            self.temp = tempfile.NamedTemporaryFile(prefix='sox-noise.', suffix='.png')
+            return self.spec_image.hide()
 
         # TODO: wait for effects expander to be done resizing and update
         # GLib.idle_add(self.genSpec, self)
 
-        # MAGIC: 9 happens to remove padding, etc for me (87 w/o -r)
+        # NOTE: -y values should be "one more than a multiple of two" for optimal performance. Use -Y to truncate
+        # MAGIC: height - 9 happens to remove padding, etc for me (87 w/o -r)
         height = self.builder.get_object('main-box').get_allocation().height - 9
         args = self.getArgs(['--null'], full=False) + [
-            'spectrogram', '-o', self.temp.name, '-x200', f'-y{height}', '-r']
+            'spectrogram', '-o-', '-x200', f'-y{height}','-r']
         # print('\n spec===>', ' '.join(args), file=sys.stderr)
-        spec = GLib.spawn_async(args, flags=GLib.SpawnFlags.DO_NOT_REAP_CHILD)
-        GLib.child_watch_add(spec[0], self.specDone)
+        spec = GLib.spawn_async(args, flags=GLib.SpawnFlags.SEARCH_PATH, standard_output=True)
+        GLib.io_add_watch(spec[2], GLib.IO_IN, self.specDone)
 
-    def specDone(self, a, b):
-        self.spec_image.set_from_file(self.temp.name)
-        self.spec_image.show()
+    def specDone(self, fd, x):
+        with os.fdopen(fd, "rb") as spec:
+            loader = GdkPixbuf.PixbufLoader()
+            loader.write(spec.read())
+            loader.close()
+            self.spec_image.set_from_pixbuf(loader.get_pixbuf())
+            self.spec_image.show()
 
     def getArgs(self, output, full=True, repeat=True):
         vol = self.volume.get_value()
