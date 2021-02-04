@@ -11,13 +11,6 @@ import configparser
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, GLib, Gdk, GdkPixbuf
 from subprocess import Popen
-output_mapping = {
-    'pulse':   ['-tpulseaudio'],
-    'alsa':    ['-talsa'],
-    'wav':     ['-twav', '-'],
-    'sox':     ['-tsox', '-'],
-    'default': ['-d'],
-}
 
 
 class SoxNoise:
@@ -64,6 +57,7 @@ class SoxNoise:
         parser.add_argument('--output',        choices=output_mapping.keys(), default='default', help='Output device/format')
         parser.add_argument('--spectrogram',   action='store_true',    help="Show the spectrogram")
         parser.add_argument('--extras',        nargs='+',              help='Extra arguments to pass to sox')
+        parser.add_argument('--version',       action='version',       help='Show version and exit', version=version)
         self.defaults = parser.parse_args([])
         self.parser = parser
 
@@ -143,8 +137,7 @@ class SoxNoise:
         self.doneAdjusting()
 
     def onDestroy(self, *args):
-        if self.subp:
-            self.subp.kill()
+        if self.subp:  self.subp.kill()
         Gtk.main_quit()
 
     def onKeyPress(self, widget, event):
@@ -294,13 +287,26 @@ class SoxNoise:
             'repeat', '-'] if full and repeat else [])
 
     def play(self, button=None):
-        if self.subp:
-            self.subp.kill()
+        if self.subp:  self.subp.kill()
         if self.play_button.get_active():
             args = self.getArgs(self.output)
             print('\n ===>', ' '.join(args), file=sys.stderr)
             self.subp = Popen(args)
 
+
+# globals
+version = 'Unknown'
+output_mapping = {
+    'pulse':   ['-tpulseaudio'],
+    'alsa':    ['-talsa'],
+    'wav':     ['-twav', '-'],
+    'sox':     ['-tsox', '-'],
+    'default': ['-d'],
+}
+vfilename = os.path.join(os.path.dirname(__file__), ".version")
+if os.path.exists(vfilename):
+    with open(vfilename, 'r') as ver:
+        version = ver.read() or version
 
 def start():
     SoxNoise(sys.argv[1:])

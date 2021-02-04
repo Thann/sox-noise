@@ -5,14 +5,14 @@ from setuptools import setup, find_packages
 description = "Noise generator GUI powered by Sound eXchange"
 
 def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
+    with open(os.path.join(os.path.dirname(__file__), fname)) as file:
+        return file.read()
 
 def get_version():
     from subprocess import Popen, PIPE
     try:
         from subprocess import DEVNULL # py3
     except ImportError:
-        import os
         DEVNULL = open(os.devnull, 'wb')
 
     def run(*cmd):
@@ -24,27 +24,35 @@ def get_version():
             run('git', 'rev-list', '--count', 'HEAD'),
             run('git', 'rev-parse', '--short', 'HEAD')))
 
+# write version file
+version = get_version()
+filename = os.path.join(os.path.dirname(__file__), ".version")
+with open(filename, 'w') as vfile:
+    vfile.write(version)
+
 setup(
     name = "sox-noise",
-    version = get_version(),
+    version = version,
     author = "Jonathan Knapp",
     author_email = "jaknapp8@gmail.com",
     description = description,
     license = "UNLICENSE",
     keywords = "sox noise generator",
     url = "http://github.com/thann/sox-noise",
-    long_description=read('README.md'),
+    long_description = description,
+    # long_description=read('README.md'),
     classifiers=[
         "Development Status :: 4 - Beta",
         # "Development Status :: 5 - Production/Stable",
         "Topic :: Multimedia :: Sound/Audio :: Sound Synthesis",
         "License :: OSI Approved :: The Unlicense (Unlicense)",
     ],
+    # NOTE: This causes a warning but is seemingly necessary unless everything is in a sub-folder =/
     packages=[''],
-    package_data={'': ['main.ui']},
+    package_data={'': ['main.ui', '.version']},
     include_package_data=True,
     py_modules=["sox_noise"],
-    install_requires=['wheel', 'PyGObject'],  # pycairo ?
+    install_requires=['wheel', 'PyGObject'],
     entry_points={
         'gui_scripts': [
             'sox-noise=sox_noise:start',
