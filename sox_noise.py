@@ -170,7 +170,7 @@ class SoxNoise:
         self.menu.popdown()
 
     def saveSettings(self, widget=None):
-        dialog = self.dialog('Save Settings', conf=True)
+        dialog = self.dialog('Save Settings', conf=True, save=True)
         # dialog.set_filename(self.cpath)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -200,7 +200,7 @@ class SoxNoise:
             config.write(configfile)
 
     def loadSettings(self, widget=None):
-        dialog = self.dialog('Load Settings', conf=True, open=True)
+        dialog = self.dialog('Load Settings', conf=True)
         # dialog.set_filename(self.cpath)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -216,7 +216,7 @@ class SoxNoise:
 
     def saveSound(self, widget=None):
         if widget:  # button clicked
-            dialog = self.dialog('Save Sound', audio=True)
+            dialog = self.dialog('Save Sound', audio=True, save=True)
             # dialog.set_filename('noise.ogg')
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
@@ -231,9 +231,9 @@ class SoxNoise:
         # print('\n save===>', ' '.join(args), file=sys.stderr)
         Popen(args)
 
-    def dialog(self, title, audio=False, conf=False, open=False):
-        dialog = Gtk.FileChooserDialog(title=title, parent=self.window, action=Gtk.FileChooserAction.SAVE if not open else Gtk.FileChooserAction.OPEN)
-        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if not open else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+    def dialog(self, title, audio=False, conf=False, save=False):
+        dialog = Gtk.FileChooserDialog(title=title, parent=self.window, action=Gtk.FileChooserAction.SAVE if save else Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if save else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         if audio:
             fltr = Gtk.FileFilter()
             fltr.set_name('Audio files')
