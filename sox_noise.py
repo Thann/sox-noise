@@ -20,8 +20,7 @@ class SoxNoise:
         self.builder.connect_signals(self)
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.onDestroy)
 
-        self.subp = None
-        self.window = self.builder.get_object("main-window")
+        self.window = self.builder.get_object('main-window')
         self.play_button = self.builder.get_object('play-button')
         self.spec_button = self.builder.get_object('spec-button')
         self.spec_image = self.builder.get_object('spec-image')
@@ -55,9 +54,9 @@ class SoxNoise:
         parser.add_argument('--hide',          action='store_true',    help="Don't show the window")
         parser.add_argument('--save',          help='Save sound to filename')
         parser.add_argument('--output',        choices=output_mapping.keys(), default='default', help='Output device/format')
-        parser.add_argument('--spectrogram',   action='store_true',    help="Show the spectrogram")
+        parser.add_argument('--spectrogram',   action='store_true',    help='Show the spectrogram')
         parser.add_argument('--extras',        nargs='+',              help='Extra arguments to pass to sox')
-        parser.add_argument('--version',       action='version',       help='Show version and exit', version=version)
+        parser.add_argument('--version',       action='version',       help=version, version=version)
         self.defaults = parser.parse_args([])
         self.parser = parser
 
@@ -70,9 +69,10 @@ class SoxNoise:
             print("Config:", self.cpath, copts, file=sys.stderr)  # avoid printing on help
         else:
             self.pargs = parser.parse_args(remaining_args)
-            if cargs.config:  print("No config file found:", self.cpath, file=sys.stderr)
+            if cargs.config:  print('Config file not found:', self.cpath, file=sys.stderr)
 
         # set initial values
+        self.subp = None
         self.save = self.pargs.save
         self.noise = self.pargs.noise
         self.duration = self.pargs.duration
@@ -170,7 +170,7 @@ class SoxNoise:
         self.menu.popdown()
 
     def saveSettings(self, widget=None):
-        dialog = self.dialog("Save Settings", conf=True)
+        dialog = self.dialog('Save Settings', conf=True)
         # dialog.set_filename(self.cpath)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -200,7 +200,7 @@ class SoxNoise:
             config.write(configfile)
 
     def loadSettings(self, widget=None):
-        dialog = self.dialog("Load Settings", conf=True, open=True)
+        dialog = self.dialog('Load Settings', conf=True, open=True)
         # dialog.set_filename(self.cpath)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -216,7 +216,7 @@ class SoxNoise:
 
     def saveSound(self, widget=None):
         if widget:  # button clicked
-            dialog = self.dialog("Save Sound", audio=True)
+            dialog = self.dialog('Save Sound', audio=True)
             # dialog.set_filename('noise.ogg')
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
@@ -236,17 +236,17 @@ class SoxNoise:
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if not open else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         if audio:
             fltr = Gtk.FileFilter()
-            fltr.set_name("Audio files")
-            fltr.add_mime_type("audio/*")
+            fltr.set_name('Audio files')
+            fltr.add_mime_type('audio/*')
             dialog.add_filter(fltr)
         if conf:
             fltr = Gtk.FileFilter()
-            fltr.set_name("Config files")
-            fltr.add_pattern("*.conf")
+            fltr.set_name('Config files')
+            fltr.add_pattern('*.conf')
             dialog.add_filter(fltr)
         fltr = Gtk.FileFilter()
-        fltr.set_name("All files")
-        fltr.add_pattern("*")
+        fltr.set_name('All files')
+        fltr.add_pattern('*')
         dialog.add_filter(fltr)
         return dialog
 
@@ -303,8 +303,9 @@ output_mapping = {
     'sox':     ['-tsox', '-'],
     'default': ['-d'],
 }
-vfilename = os.path.join(os.path.dirname(__file__), ".version")
+vfilename = os.path.join(os.path.dirname(__file__), '.version')
 if os.path.exists(vfilename):
+    # NOTE: version file is created externally by setup.py
     with open(vfilename, 'r') as ver:
         version = ver.read() or version
 
@@ -312,5 +313,5 @@ def start():
     SoxNoise(sys.argv[1:])
     Gtk.main()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     start()
