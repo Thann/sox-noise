@@ -21,6 +21,7 @@ class SoxNoise:
         GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, self.onDestroy)
 
         self.window = self.builder.get_object('main-window')
+        self.main_box = self.builder.get_object('main-box')
         self.play_button = self.builder.get_object('play-button')
         self.spec_button = self.builder.get_object('spec-button')
         self.spec_image = self.builder.get_object('spec-image')
@@ -28,6 +29,7 @@ class SoxNoise:
         self.band_width = self.builder.get_object('adj-band-width')
         self.tremolo_speed = self.builder.get_object('adj-tremolo-speed')
         self.tremolo_depth = self.builder.get_object('adj-tremolo-depth')
+        self.effects = self.builder.get_object('effects-expander')
         self.reverb = self.builder.get_object('adj-reverb')
         self.volume = self.builder.get_object('adj-volume')
         self.menu = self.builder.get_object('popover-menu')
@@ -85,7 +87,7 @@ class SoxNoise:
         if self.pargs.output not in ['wav', 'sox'] and os.fstat(0) != os.fstat(1):
             print('WARNING: Redirect Detected: Use the "--output=wav" or "--output=sox" arguments to redirect sound data!', file=sys.stderr)
         if self.pargs.effects:
-            self.builder.get_object('effects-expander').set_expanded(True)
+            self.effects.set_expanded(True)
         if not self.pargs.hide:
             self.window.show_all()
         self.spec_button.set_active(self.pargs.spectrogram)
@@ -122,7 +124,7 @@ class SoxNoise:
 
     def resetSettings(self, pargs=None):
         if not pargs or not isinstance(pargs, argparse.Namespace):
-            pargs = self.defaults
+            pargs = self.defaults  # use defaults when called by a widget
         self.band_center.set_value(pargs.band_center)
         self.band_width.set_value(pargs.band_width)
         self.tremolo_speed.set_value(pargs.tremolo_speed)
@@ -141,10 +143,29 @@ class SoxNoise:
         Gtk.main_quit()
 
     def onKeyPress(self, widget, event):
-        # Close on Ctrl+Q, etc.
-        if (event.keyval in [Gdk.KEY_q, Gdk.KEY_w, Gdk.KEY_c] and
-            event.state & Gdk.ModifierType.CONTROL_MASK):
-            self.onDestroy()
+        # TODO: configurable keybinds
+        # play/pause on space
+        if event.keyval == Gdk.KEY_space:
+            self.play_button.set_active(not self.play_button.get_active())
+        elif event.state & Gdk.ModifierType.CONTROL_MASK:
+            # close on Ctrl+Q, etc.
+            if event.keyval in [Gdk.KEY_q, Gdk.KEY_w, Gdk.KEY_c, Gdk.KEY_Q, Gdk.KEY_W, Gdk.KEY_C]:
+                self.onDestroy()
+            # effects on Ctrl+E
+            elif event.keyval in [Gdk.KEY_e, Gdk.KEY_E]:
+                self.effects.set_expanded(not self.effects.get_expanded())
+            # spectrogram on Ctrl+D
+            elif event.keyval in [Gdk.KEY_d, Gdk.KEY_D]:
+                self.spec_button.set_active(not self.spec_button.get_active())
+            # load on Ctrl+O
+            elif event.keyval in [Gdk.KEY_o, Gdk.KEY_O]:
+                self.loadSettings()
+            # save on Ctrl+S
+            elif event.keyval in [Gdk.KEY_s, Gdk.KEY_S]:
+                if event.state & Gdk.ModifierType.SHIFT_MASK:
+                    self.saveSound(True)
+                else:
+                    self.saveSettings()
 
     def valueChanged(self, adj):
         # slider changed
@@ -170,14 +191,8 @@ class SoxNoise:
         self.menu.popdown()
 
     def saveSettings(self, widget=None):
-        dialog = self.dialog('Save Settings', conf=True, save=True)
-        # dialog.set_filename(self.cpath)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            filename = dialog.get_filename()
-        elif response == Gtk.ResponseType.CANCEL:
-            return dialog.destroy()
-        dialog.destroy()
+        filename = self.dialog('Save Settings', conf=True, save=True)
+        if not filename:  return
         config = configparser.ConfigParser()
         args = {
             'play': self.play_button.get_active(),
@@ -200,14 +215,8 @@ class SoxNoise:
             config.write(configfile)
 
     def loadSettings(self, widget=None):
-        dialog = self.dialog('Load Settings', conf=True)
-        # dialog.set_filename(self.cpath)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            filename = dialog.get_filename()
-        elif response == Gtk.ResponseType.CANCEL:
-            return dialog.destroy()
-        dialog.destroy()
+        filename = self.dialog('Load Settings', conf=True)
+        if not filename:  return
         copts = self.parseConfig(filename)
         self.parser.set_defaults(**vars(self.defaults))
         self.parser.set_defaults(**copts)
@@ -216,24 +225,21 @@ class SoxNoise:
 
     def saveSound(self, widget=None):
         if widget:  # button clicked
-            dialog = self.dialog('Save Sound', audio=True, save=True)
-            # dialog.set_filename('noise.ogg')
-            response = dialog.run()
-            if response == Gtk.ResponseType.OK:
-                filename = dialog.get_filename()
-            elif response == Gtk.ResponseType.CANCEL:
-                return dialog.destroy()
-            dialog.destroy()
+            filename = self.dialog('Save Sound', audio=True, save=True)
+            if not filename:  return
         elif self.save:
             filename = self.save
-        else: return
+        else:  return
         args = self.getArgs([filename], repeat=False)
         # print('\n save===>', ' '.join(args), file=sys.stderr)
         Popen(args)
 
-    def dialog(self, title, audio=False, conf=False, save=False):
+    def dialog(self, title, audio=False, conf=False, save=False, filename=None):
+        # show FileChooserDialog and return filename
         dialog = Gtk.FileChooserDialog(title=title, parent=self.window, action=Gtk.FileChooserAction.SAVE if save else Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if save else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        if filename:
+            dialog.set_filename(filename)
         if audio:
             fltr = Gtk.FileFilter()
             fltr.set_name('Audio files')
@@ -248,7 +254,12 @@ class SoxNoise:
         fltr.set_name('All files')
         fltr.add_pattern('*')
         dialog.add_filter(fltr)
-        return dialog
+        selected = None
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            selected = dialog.get_filename()
+        dialog.destroy()
+        return selected
 
     def showSpectrogram(self, widget=None, event=None):
         if not self.spec_button.get_active():
@@ -259,7 +270,7 @@ class SoxNoise:
 
         # NOTE: -y values should be "one more than a multiple of two" for optimal performance. Use -Y to truncate
         # MAGIC: height - 9 happens to remove padding, etc for me (87 w/o -r)
-        height = self.builder.get_object('main-box').get_allocation().height - 9
+        height = self.main_box.get_allocation().height - 9
         args = self.getArgs(['--null'], full=False) + [
             'spectrogram', '-o-', '-x200', f'-y{height}','-r']
         # print('\n spec===>', ' '.join(args), file=sys.stderr)
