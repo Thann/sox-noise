@@ -90,6 +90,7 @@ class SoxNoise:
             self.effects.set_expanded(True)
         if not self.pargs.hide:
             self.window.show_all()
+        self.window.set_focus(self.play_button)
         self.spec_button.set_active(self.pargs.spectrogram)
         if self.pargs.hide or self.pargs.play:
             self.play_button.set_active(True)
@@ -147,6 +148,7 @@ class SoxNoise:
         # play/pause on space
         if event.keyval == Gdk.KEY_space:
             self.play_button.set_active(not self.play_button.get_active())
+            return True  # prevent default behaviour
         elif event.state & Gdk.ModifierType.CONTROL_MASK:
             # close on Ctrl+Q, etc.
             if event.keyval in [Gdk.KEY_q, Gdk.KEY_w, Gdk.KEY_c, Gdk.KEY_Q, Gdk.KEY_W, Gdk.KEY_C]:
