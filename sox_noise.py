@@ -34,7 +34,7 @@ class SoxNoise:
         self.volume = self.builder.get_object('adj-volume')
         self.menu = self.builder.get_object('popover-menu')
         if app:  self.window.set_application(app)
-        default_conf = os.getenv('XDG_CONFIG_HOME', '~/.config') + '/sox-noise.conf'
+        default_conf = os.getenv('XDG_CONFIG_HOME', '~/.config') + '/sox-noise-default.sxn'
         output_mapping = {
             'pulse':   ['-tpulseaudio'],
             'alsa':    ['-talsa'],
@@ -86,6 +86,8 @@ class SoxNoise:
         self.save = self.pargs.save
         self.noise = self.pargs.noise
         self.duration = self.pargs.duration
+        self.last_sound_fname = 'noise.ogg'
+        self.last_config_fname = 'noise.sxn'
         self.resetSettings(self.pargs)
         out_split = self.pargs.output.split(',', 1)
         self.output = output_mapping.get(out_split[0])
@@ -200,8 +202,9 @@ class SoxNoise:
         self.menu.popdown()
 
     def saveSettings(self, widget=None):
-        filename = self.dialog('Save Settings', conf=True, save=True)
+        filename = self.dialog('Save Settings', conf=True, save=True, filename=self.last_config_fname)
         if not filename:  return
+        self.last_config_fname = filename
         config = configparser.ConfigParser()
         args = {
             'play': self.play_button.get_active(),
@@ -224,8 +227,9 @@ class SoxNoise:
             config.write(configfile)
 
     def loadSettings(self, widget=None):
-        filename = self.dialog('Load Settings', conf=True)
+        filename = self.dialog('Load Settings', conf=True, filename=self.last_config_fname)
         if not filename:  return
+        self.last_config_fname = filename
         copts = self.parseConfig(filename)
         self.parser.set_defaults(**vars(self.defaults))
         self.parser.set_defaults(**copts)
@@ -234,11 +238,12 @@ class SoxNoise:
 
     def saveSound(self, widget=None):
         if widget:  # button clicked
-            filename = self.dialog('Save Sound', audio=True, save=True)
+            filename = self.dialog('Save Sound', audio=True, save=True, filename=self.last_sound_fname)
             if not filename:  return
         elif self.save:
             filename = self.save
         else:  return
+        self.last_sound_fname = filename
         args = self.getArgs([filename], repeat=False)
         # print('\n save===>', ' '.join(args), file=sys.stderr)
         Popen(args)
@@ -248,7 +253,10 @@ class SoxNoise:
         dialog = Gtk.FileChooserDialog(title=title, parent=self.window, action=Gtk.FileChooserAction.SAVE if save else Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if save else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
         if filename:
-            dialog.set_filename(filename)
+            if filename == os.path.basename(filename):  # if filename not full path
+                dialog.set_current_name(filename)
+            else:
+                dialog.set_filename(filename)
         if audio:
             fltr = Gtk.FileFilter()
             fltr.set_name('Audio files')
@@ -257,7 +265,7 @@ class SoxNoise:
         if conf:
             fltr = Gtk.FileFilter()
             fltr.set_name('Config files')
-            fltr.add_pattern('*.conf')
+            fltr.add_pattern('*.sxn')
             dialog.add_filter(fltr)
         fltr = Gtk.FileFilter()
         fltr.set_name('All files')

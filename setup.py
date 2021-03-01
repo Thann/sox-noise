@@ -64,11 +64,13 @@ setup(
     ],
     desktop_entries={
         'sox-noise': {
+            'args': '--config=%f',
             'filename': 'thann.sox-noise',
             'Name': 'SoX Noise',
             'Categories': 'AudioVideo;Audio;Player',
             'Comment': description,
             'Icon': 'audio-volume-high',
+            'MimeType': 'text/x-sox-noise-config',
         },
     },
 )
