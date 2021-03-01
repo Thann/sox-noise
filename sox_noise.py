@@ -9,12 +9,12 @@ import signal
 import argparse
 import configparser
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk, GLib, Gdk, GdkPixbuf
+from gi.repository import Gtk, GLib, Gdk, Gio, GdkPixbuf
 from subprocess import Popen
 
 
 class SoxNoise:
-    def __init__(self, args=[]):
+    def __init__(self, args=[], app=None):
         self.builder = Gtk.Builder()
         self.builder.add_from_file(os.path.join(os.path.dirname(__file__), "main.ui"))
         self.builder.connect_signals(self)
@@ -33,7 +33,15 @@ class SoxNoise:
         self.reverb = self.builder.get_object('adj-reverb')
         self.volume = self.builder.get_object('adj-volume')
         self.menu = self.builder.get_object('popover-menu')
+        if app:  self.window.set_application(app)
         default_conf = os.getenv('XDG_CONFIG_HOME', '~/.config') + '/sox-noise.conf'
+        output_mapping = {
+            'pulse':   ['-tpulseaudio'],
+            'alsa':    ['-talsa'],
+            'wav':     ['-twav', '-'],
+            'sox':     ['-tsox', '-'],
+            'default': ['-d'],
+        }
 
         # parse args
         conf_parser = argparse.ArgumentParser(add_help=False)
@@ -141,7 +149,6 @@ class SoxNoise:
 
     def onDestroy(self, *args):
         if self.subp:  self.subp.kill()
-        Gtk.main_quit()
 
     def onKeyPress(self, widget, event):
         # TODO: configurable keybinds
@@ -152,7 +159,7 @@ class SoxNoise:
         elif event.state & Gdk.ModifierType.CONTROL_MASK:
             # close on Ctrl+Q, etc.
             if event.keyval in [Gdk.KEY_q, Gdk.KEY_w, Gdk.KEY_c, Gdk.KEY_Q, Gdk.KEY_W, Gdk.KEY_C]:
-                self.onDestroy()
+                self.window.destroy()
             # effects on Ctrl+E
             elif event.keyval in [Gdk.KEY_e, Gdk.KEY_E]:
                 self.effects.set_expanded(not self.effects.get_expanded())
@@ -291,7 +298,7 @@ class SoxNoise:
         vol = self.volume.get_value()
         return ['sox', f'-c{2 if full else 1}', '--null', *output,
             'synth', f'0:{self.duration if full else 1}', f'{self.noise}noise',
-            'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value())] +([
+            'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value())] + ([
             'tremolo', str(self.tremolo_speed.get_value()/self.duration), str(self.tremolo_depth.get_value()),
             'reverb', str(self.reverb.get_value())] + ([
             'vol', str(vol/100)] if vol <= 100 else ['gain', str(vol-100)]) + [
@@ -307,15 +314,29 @@ class SoxNoise:
             self.subp = Popen(args)
 
 
-# globals
+# Integrates App with DE rich-features
+class SoxNoiseApp(Gtk.Application):
+    def __init__(self, win=None):
+        super().__init__(application_id='thann.sox-noise', flags=(
+            Gio.ApplicationFlags.NON_UNIQUE |
+            Gio.ApplicationFlags.HANDLES_OPEN
+        ))
+
+    def run(self, args):
+        # circumvent options parsing
+        self.args = args[1:]
+        super().run()
+
+    def do_activate(self, args=[]):
+        self.register()
+        self.app = SoxNoise(self.args, app=self)
+
+    # TODO:
+    # def do_open(files, hint):
+    #     self.app.loadSettings(files)
+
+
 version = 'Unknown'
-output_mapping = {
-    'pulse':   ['-tpulseaudio'],
-    'alsa':    ['-talsa'],
-    'wav':     ['-twav', '-'],
-    'sox':     ['-tsox', '-'],
-    'default': ['-d'],
-}
 vfilename = os.path.join(os.path.dirname(__file__), '.version')
 if os.path.exists(vfilename):
     # NOTE: version file is created externally by setup.py
@@ -323,8 +344,7 @@ if os.path.exists(vfilename):
         version = ver.read() or version
 
 def start():
-    SoxNoise(sys.argv[1:])
-    Gtk.main()
+    sys.exit(SoxNoiseApp().run(sys.argv))
 
 if __name__ == '__main__':
     start()
