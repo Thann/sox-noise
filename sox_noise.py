@@ -34,7 +34,8 @@ class SoxNoise:
         self.volume = self.builder.get_object('adj-volume')
         self.menu = self.builder.get_object('popover-menu')
         if app:  self.window.set_application(app)
-        default_conf = os.getenv('XDG_CONFIG_HOME', '~/.config') + '/sox-noise-default.sxn'
+        self.config_location = os.path.join(os.getenv('XDG_CONFIG_HOME', '~/.config'), 'sox-noise')
+        default_conf = os.path.join(self.config_location, 'default.sxn')
         output_mapping = {
             'pulse':   ['-tpulseaudio'],
             'alsa':    ['-talsa'],
@@ -80,6 +81,10 @@ class SoxNoise:
         else:
             self.pargs = parser.parse_args(remaining_args)
             if cargs.config:  print('Config file not found:', self.cpath, file=sys.stderr)
+            else:  # create default config file
+                os.makedirs(os.path.dirname(self.cpath), exist_ok=True)
+                with open(self.cpath, 'w') as configfile:
+                    configfile.write('[sox-noise]\n');
 
         # set initial values
         self.subp = None
@@ -150,7 +155,8 @@ class SoxNoise:
         self.doneAdjusting()
 
     def onDestroy(self, *args):
-        if self.subp:  self.subp.kill()
+        if getattr(self, 'subp', False):  self.subp.kill()
+        sys.exit()
 
     def onKeyPress(self, widget, event):
         # TODO: configurable keybinds
@@ -248,13 +254,16 @@ class SoxNoise:
         # print('\n save===>', ' '.join(args), file=sys.stderr)
         Popen(args)
 
+    # show FileChooserDialog and return filename
     def dialog(self, title, audio=False, conf=False, save=False, filename=None):
-        # show FileChooserDialog and return filename
         dialog = Gtk.FileChooserDialog(title=title, parent=self.window, action=Gtk.FileChooserAction.SAVE if save else Gtk.FileChooserAction.OPEN)
         dialog.add_buttons(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL, Gtk.STOCK_SAVE if save else Gtk.STOCK_OPEN, Gtk.ResponseType.OK)
+        dialog.add_shortcut_folder(os.path.expanduser(self.config_location))  # bookmark default config location
         if filename:
             if filename == os.path.basename(filename):  # if filename not full path
-                dialog.set_current_name(filename)
+                if save:  dialog.set_current_name(filename)
+                if conf:  # show the folder of the current config file
+                    dialog.set_current_folder(os.path.dirname(self.cpath))
             else:
                 dialog.set_filename(filename)
         if audio:
