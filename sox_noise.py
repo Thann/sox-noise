@@ -293,6 +293,9 @@ class SoxNoise:
 
         # TODO: wait for effects expander to be done resizing and update
         # GLib.idle_add(self.genSpec, self)
+        if widget == self.effects:
+            # HACK: show spectgrogram after resizing
+            return GLib.timeout_add(50, self.showSpectrogram)
 
         # NOTE: -y values should be "one more than a multiple of two" for optimal performance. Use -Y to truncate
         # MAGIC: height - 9 happens to remove padding, etc for me (87 w/o -r)

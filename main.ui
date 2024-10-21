@@ -159,6 +159,7 @@
     <property name="icon-name">audio-volume-high</property>
     <property name="gravity">west</property>
     <property name="startup-id">sox-noise</property>
+    <signal name="configure-event" handler="showSpectrogram" after="yes" swapped="no"/>
     <signal name="destroy" handler="onDestroy" swapped="no"/>
     <signal name="key-press-event" handler="onKeyPress" swapped="no"/>
     <child>
@@ -410,6 +411,7 @@
               <object class="GtkExpander" id="effects-expander">
                 <property name="visible">True</property>
                 <property name="can-focus">True</property>
+                <signal name="activate" handler="showSpectrogram" after="yes" swapped="no"/>
                 <child>
                   <object class="GtkBox">
                     <property name="visible">True</property>
