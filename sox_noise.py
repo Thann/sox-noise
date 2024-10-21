@@ -30,6 +30,7 @@ class SoxNoise:
         self.tremolo_speed = self.builder.get_object('adj-tremolo-speed')
         self.tremolo_depth = self.builder.get_object('adj-tremolo-depth')
         self.effects = self.builder.get_object('effects-expander')
+        self.lowpass = self.builder.get_object('adj-lowpass')
         self.reverb = self.builder.get_object('adj-reverb')
         self.volume = self.builder.get_object('adj-volume')
         self.menu = self.builder.get_object('popover-menu')
@@ -59,6 +60,7 @@ class SoxNoise:
         parser.add_argument('--reverb',        type=int,  default=20,  help='Small amounts make it sound more natural [0-100]')
         parser.add_argument('--tremolo-speed', type=int,  default=2,   help='Periodically raise and lower the volume [0-10] (cycles per duration)')
         parser.add_argument('--tremolo-depth', type=int,  default=30,  help='Tremolo intensity [0-100]')
+        parser.add_argument('--lowpass',       type=int,  default=0,   help='Lowpass filter width (disable with 0)')
         parser.add_argument('--duration',      type=int,  default=60,  help='How many seconds to generate noise before looping (default: 60)')
         parser.add_argument('--fade',          type=float,default=.005,help='How long to fade in/out on loop. Prevents clicking/popping (default: 0.005)')
         parser.add_argument('--tray',          action='store_true',    help='Show an icon in the system tray')
@@ -146,6 +148,7 @@ class SoxNoise:
         self.band_width.set_value(pargs.band_width)
         self.tremolo_speed.set_value(pargs.tremolo_speed)
         self.tremolo_depth.set_value(pargs.tremolo_depth)
+        self.lowpass.set_value(pargs.lowpass)
         self.reverb.set_value(pargs.reverb)
         self.volume.set_value(pargs.volume)
         self.needs_update = self.noise == pargs.noise
@@ -201,7 +204,7 @@ class SoxNoise:
         if self.needs_update:
             self.saveSound()
             self.needs_update = False
-            if not widget or widget.get_name().startswith('band_'):
+            if not widget or widget.get_name() in ['band_width', 'band_center', 'lowpass']:
                 self.showSpectrogram()
             if self.subp:  self.play()
 
@@ -217,9 +220,9 @@ class SoxNoise:
             'play': self.play_button.get_active(),
             'noise': self.noise,
             **{ k: int(getattr(self, k).get_value())
-                for k in ['volume', 'band_center', 'band_width',
+                for k in ['volume', 'band_center', 'band_width', 'lowpass',
                           'reverb', 'tremolo_speed', 'tremolo_depth'] },
-            'effects': self.pargs.effects,
+            'effects': self.effects.get_expanded(),
             'spectrogram': self.spec_button.get_active(),
             'output': self.pargs.output,
             'duration': self.duration,
@@ -320,6 +323,7 @@ class SoxNoise:
         return ['sox', f'-c{2 if full else 1}', '--null', *output,
             'synth', f'0:{self.duration if full else 1}', f'{self.noise}noise',
             'band', '-n', str(self.band_center.get_value()), str(self.band_width.get_value())] + ([
+            'lowpass', '-1', str(self.lowpass.get_value())] if self.lowpass.get_value() else []) + ([
             'tremolo', str(self.tremolo_speed.get_value()/self.duration), str(self.tremolo_depth.get_value()),
             'reverb', str(self.reverb.get_value())] + ([
             'vol', str(vol/100)] if vol <= 100 else ['gain', str(vol-100)]) + [
