@@ -107,6 +107,7 @@ class SoxNoise:
             self.window.show_all()
         self.window.set_focus(self.play_button)
         self.spec_button.set_active(self.pargs.spectrogram)
+        self.builder.get_object('version-label').set_markup(f"<span size='xx-small'>v{version}</span>")
         if self.pargs.hide or self.pargs.play:
             self.play_button.set_active(True)
         if self.pargs.tray:
@@ -361,7 +362,7 @@ vfilename = os.path.join(os.path.dirname(__file__), '.version')
 if os.path.exists(vfilename):
     # NOTE: version file is created externally by setup.py
     with open(vfilename, 'r') as ver:
-        version = ver.read() or version
+        version = (ver.read() or version).strip()
 
 def start():
     sys.exit(SoxNoiseApp().run(sys.argv))
